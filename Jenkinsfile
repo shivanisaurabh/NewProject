@@ -1,45 +1,47 @@
 pipeline {
     agent any
 
-    environment {
-        THREADS = '2'
-        ENV = 'QA'
+    tools {
+        maven 'Maven_3.9.10' // Make sure this matches your configured Maven name in Jenkins
+        jdk 'JDK_17'         // Also configure this JDK name in Jenkins tools
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/shivanisaurabh/NewProject'
+                git 'https://github.com/shivanisaurabh/NewProject.git'
             }
         }
 
         stage('Build') {
             steps {
-                echo "Build started..."
                 bat 'mvn clean install'
             }
         }
 
-        stage('Run Tests') {
+        stage('Test') {
             steps {
-                echo "Running tests..."
                 bat 'mvn test'
             }
         }
 
         stage('Publish Report') {
             steps {
-                junit 'target/surefire-reports/*.xml'
+                publishHTML(target: [
+                    reportDir: 'test-output',
+                    reportFiles: 'ExtentReport.html',
+                    reportName: 'Extent Report',
+                    alwaysLinkToLastBuild: true,
+                    keepAll: true
+                ])
             }
         }
     }
 
     post {
         always {
-            echo 'Cleaning up...'
-        }
-        failure {
-            echo 'Build failed!'
+            junit 'target/surefire-reports/*.xml'
         }
     }
+
 }
